@@ -38,7 +38,7 @@ if strcmp(mode, 'gps')
 elseif strcmp(mode, 'flow')
     xn = x + L * (y - func_h(x));
 end
-xn(1:4) = xn(1:4) / norm(xn(1:4));
+xn(1:4) = xn(1:4) / norm(xn(1:4)); % normalize quaternion after update
 
 %% Step 4: A_t, Q_t  (Q_t time-varying: depends on quaternion of x_hat_{t|t})
 [A, Q] = linearized_process(xn, dtheta, dv, Delta_theta_n, Delta_v_n, wb, ab, dt);

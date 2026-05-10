@@ -20,7 +20,7 @@ dtheta_b = dtheta(:) - x(11:13);
 % Convert rotation vector to quaternion increment: dq = [cos(|v|/2); sin(|v|/2)*v/|v|]
 theta = norm(dtheta_b);
 if theta < 1e-6
-    dq = [1; 0; 0; 0];          % identity quaternion for negligible rotation
+    dq = [1; 0; 0; 0];          % identity quaternion for negligible rotation - avoid division by zero
 else
     dq = [cos(theta/2); sin(theta/2)*dtheta_b/theta];
 end
@@ -32,7 +32,7 @@ q_new = [q(1)*dq(1) - q(2:4)'*dq(2:4); ...
 q_new        = q_new / norm(q_new);   % normalize to unit quaternion
 x_new(1:4)   = q_new;
 
-%% Body-to-NED rotation matrix (DCM)  [ref: Quat2Tbn from EFFI_EKF]
+%% Body-to-NED rotation matrix (Direction Cosine Matrix)  [ref: Quat2Tbn from EFFI_EKF]
 % Tbn maps body-frame vectors to NED: v_ned = Tbn * v_body
 q0=q_new(1); q1=q_new(2); q2=q_new(3); q3=q_new(4);
 Tbn = [q0^2+q1^2-q2^2-q3^2,  2*(q1*q2-q0*q3),     2*(q1*q3+q0*q2); ...
