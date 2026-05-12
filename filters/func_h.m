@@ -15,13 +15,13 @@ function [z] = func_h(x)
     pd = x(10);
     
     % Direction Cosine Matrix (Body to NED) - R_b2n
-    % We need NED to Body (R_n2b), which is the transpose
     q0 = q(1); q1 = q(2); q2 = q(3); q3 = q(4);
     
     R_b2n = [q0^2 + q1^2 - q2^2 - q3^2, 2*(q1*q2 - q0*q3), 2*(q1*q3 + q0*q2); ...
              2*(q1*q2 + q0*q3), q0^2 - q1^2 + q2^2 - q3^2, 2*(q2*q3 - q0*q1); ...
              2*(q1*q3 - q0*q2), 2*(q2*q3 + q0*q1), q0^2 - q1^2 - q2^2 + q3^2];
     
+    % We need NED to Body (R_n2b), which is the transpose
     R_n2b = R_b2n';
     
     v_b = R_n2b * v_n;
