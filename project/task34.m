@@ -14,12 +14,12 @@ clear; clc; close all;
 
 % Robustness parameters (TUNED: optimized for minimum 3D Position RMSE)
 % c_grid = [1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07, 1e-06, 1e-05] for tuning
-data_ids = {'48'; '49'};
-c_rekf_vals = [1e-12; 1e-06];
-c_rukf_vals = [1e-08; 1e-06];
+data_ids = {'46'; '47';'48'; '49'; '50'};
+c_rekf_vals = [1e-05; 1e-09; 1e-12; 1e-06; 1e-11];
+c_rukf_vals = [1e-07; 1e-09; 1e-12; 1e-06; 1e-07];
 params = table(c_rekf_vals, c_rukf_vals, 'RowNames', data_ids);
 
-data_num  = '48'; % SELECT dataset 48 or 49
+data_num  = '50'; % SELECT dataset 
 c_rekf = params{data_num, 'c_rekf_vals'};
 c_rukf = params{data_num, 'c_rukf_vals'};
 

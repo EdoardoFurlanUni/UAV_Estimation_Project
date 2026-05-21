@@ -6,7 +6,7 @@
 % =========================================================================
 clear; clc; close all;
 
-datasets = {'48', '49'};
+datasets = {'46', '47', '48', '49', '50'};
 c_scales = logspace(-12, -4, 9);
 n_c = length(c_scales);
 
@@ -16,7 +16,7 @@ best_c_rukf = zeros(length(datasets), 1);
 %% Tuned Parameters (From grid_search & alpha tuning)
 R_gps  = diag([(0.5*0.05)^2; (0.5*0.05)^2; (0.001*0.1)^2; (0.05*0.3)^2; (0.05*0.3)^2; 0.4^2]); 
 R_flow = diag([(3.0*0.5)^2; (0.25*0.4)^2; 0.4^2]);
-best_alpha = 0.50;
+best_alpha = 0.60;
 
 fprintf('==========================================================\n');
 fprintf('          STARTING ROBUSTNESS TUNING (c)                  \n');
@@ -134,7 +134,7 @@ end
 fprintf('==========================================================\n');
 fprintf('          FINAL ROBUSTNESS PARAMETERS TO USE IN task34.m  \n');
 fprintf('==========================================================\n');
-fprintf('data_ids = {''48''; ''49''};\n');
-fprintf('c_rekf_vals = [%1.0e; %1.0e];\n', best_c_rekf(1), best_c_rekf(2));
-fprintf('c_rukf_vals = [%1.0e; %1.0e];\n', best_c_rukf(1), best_c_rukf(2));
+fprintf('data_ids = {''46''; ''47'';''48''; ''49''; ''50''};\n');
+fprintf('c_rekf_vals = [%1.0e; %1.0e; %1.0e; %1.0e; %1.0e];\n', best_c_rekf(1), best_c_rekf(2), best_c_rekf(3), best_c_rekf(4), best_c_rekf(5));
+fprintf('c_rukf_vals = [%1.0e; %1.0e; %1.0e; %1.0e; %1.0e];\n', best_c_rukf(1), best_c_rukf(2), best_c_rukf(3), best_c_rukf(4), best_c_rukf(5));
 fprintf('==========================================================\n');

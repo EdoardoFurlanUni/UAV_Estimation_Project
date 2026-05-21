@@ -12,7 +12,8 @@ clear; clc; close all;
 data_num = '49';
 
 %% Setup
-project_dir = fileparts(mfilename('fullpath'));
+%project_dir = fileparts(mfilename('fullpath'));
+project_dir = pwd;
 addpath(fullfile(project_dir, '..', 'filters'));
 addpath(fullfile(project_dir, '..', 'Data', 'mat'));
 
@@ -127,7 +128,7 @@ for ia = 1:n_alpha
         R_gps_best, R_flow_best, VEL_THR_x, VEL_THR_y, a);
     
     rmse_ukf_alpha(ia) = calc_rmse(X_ukf(8:10, 1:N-1)', gt_pos(1:N-1,:));
-    fprintf('  alpha=%.2f => UKF Pos RMSE = %.4f m\n', a, rmse_ukf_alpha(ia));
+    fprintf('  alpha=%.4f => UKF Pos RMSE = %.4f m\n', a, rmse_ukf_alpha(ia));
 end
 
 [~, mi_a] = min(rmse_ukf_alpha);
