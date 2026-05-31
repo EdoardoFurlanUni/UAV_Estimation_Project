@@ -15,8 +15,8 @@ clear; clc; close all;
 % Robustness parameters (TUNED: optimized for minimum 3D Position RMSE)
 % c_grid = [1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07, 1e-06, 1e-05] for tuning
 data_ids = {'46'; '47';'48'; '49'; '50'};
-c_rekf_vals = [1e-05; 1e-09; 1e-12; 1e-06; 1e-11];
-c_rukf_vals = [1e-07; 1e-09; 1e-12; 1e-06; 1e-07];
+c_rekf_vals = [1e-05; 1e-09; 1e-12; 1e-06; 1e-07];
+c_rukf_vals = [1e-07; 1e-09; 1e-12; 1e-06; 1e-05];
 params = table(c_rekf_vals, c_rukf_vals, 'RowNames', data_ids);
 
 data_num  = '50'; % SELECT dataset 
@@ -44,16 +44,26 @@ dt = 1 / Delta;
 
 %% 2. GPS-denied interval
 % T_deny: start of denial (s from beginning), I_deny: duration (s)
-T_deny = 100;
+T_tot = t_sync(N) - t_sync(1);
 I_deny = 50;
 
-gps_denied = denied(gps_mea, T_deny, I_deny, Delta);
+% two gps_denied window equidistribuited
+window = round((T_tot - 2*I_deny) / 3);
+
+T_deny_1 = window;
+T_deny_2 = 2 * window + I_deny;
+
+gps_denied_1 = denied(gps_mea, T_deny_1, I_deny, Delta);
+gps_denied = denied(gps_denied_1, T_deny_2, I_deny, Delta);
 
 % Mode vector: 'gps' outside denial window, 'flow' inside
-deny_start = T_deny * Delta + 1;
-deny_end   = min((T_deny + I_deny) * Delta, N);
+deny_start_1 = T_deny_1 * Delta + 1;
+deny_end_1   = min((T_deny_1 + I_deny) * Delta, N);
+deny_start_2 = T_deny_2 * Delta + 1;
+deny_end_2   = min((T_deny_2 + I_deny) * Delta, N);
 mode_vec   = repmat({'gps'}, N, 1);
-mode_vec(deny_start:deny_end) = {'flow'};
+mode_vec(deny_start_1:deny_end_1) = {'flow'};
+mode_vec(deny_start_2:deny_end_2) = {'flow'};
 
 %% 3. Initialization
 start_idx = 1;
@@ -250,7 +260,8 @@ for j = 1:3
     plot(t_sync, X_ukf(4+j,:)',    'b-',  'LineWidth', lw_est, 'DisplayName', 'UKF');
     plot(t_sync, X_rekf(4+j,:)',   'r--', 'LineWidth', lw_ref, 'DisplayName', 'REKF');
     plot(t_sync, X_rukf(4+j,:)',   'b--', 'LineWidth', lw_ref, 'DisplayName', 'RUKF');
-    xregion(t_sync(deny_start), t_sync(deny_end), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
+    xregion(t_sync(deny_start_1), t_sync(deny_end_1), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
+    xregion(t_sync(deny_start_2), t_sync(deny_end_2), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
     ylabel(labels_v{j}, 'FontWeight', 'normal');
     if j == 3, xlabel('Time (s)'); end
     xlim([t_sync(1) t_sync(end)]);
@@ -277,7 +288,8 @@ for j = 1:3
     plot(t_sync, X_ukf(7+j,:)',    'b-',  'LineWidth', lw_est, 'DisplayName', 'UKF');
     plot(t_sync, X_rekf(7+j,:)',   'r--', 'LineWidth', lw_ref, 'DisplayName', 'REKF');
     plot(t_sync, X_rukf(7+j,:)',   'b--', 'LineWidth', lw_ref, 'DisplayName', 'RUKF');
-    xregion(t_sync(deny_start), t_sync(deny_end), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
+    xregion(t_sync(deny_start_1), t_sync(deny_end_1), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
+    xregion(t_sync(deny_start_2), t_sync(deny_end_2), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
     ylabel(labels_p{j}, 'FontWeight', 'normal');
     if j == 3, xlabel('Time (s)'); end
     xlim([t_sync(1) t_sync(end)]);
@@ -297,7 +309,8 @@ fig_theta = figure('Name', 'Task 3 - Theta Parameter', 'NumberTitle', 'off', 'Un
 hold on; grid on;
 plot(t_sync(1:N-1), theta_rekf(1:N-1), 'r--', 'LineWidth', 1.5, 'DisplayName', 'REKF \theta');
 plot(t_sync(1:N-1), theta_rukf(1:N-1), 'b--', 'LineWidth', 1.5, 'DisplayName', 'RUKF \theta');
-xregion(t_sync(deny_start), t_sync(deny_end), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
+xregion(t_sync(deny_start_1), t_sync(deny_end_1), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
+xregion(t_sync(deny_start_2), t_sync(deny_end_2), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
 ylabel('\theta', 'FontWeight', 'normal', 'FontSize', 12); 
 xlabel('Time (s)');
 title('Robust Parameter (\theta) Evolution over Time', 'FontSize', 12);
