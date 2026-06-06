@@ -1,75 +1,58 @@
-% % Task 3,
-    4 : EKF,
-        UKF,
-        REKF and RUKF with Optical Flow Measurement Model(GPS - Denied) % == ==
-            == == == == == == == == == == == == == == == == == == == == == == ==
-            == == == == == == == == == == ==
-        = % Runs filters on the full dataset(SELECT dataset 48 or 49).% A GPS
-          - denied interval is simulated via denied.m : during that window
-                % the filter switches from 'gps' to 'flow'.% GPS mode : y =
-              [vn; ve; vd; pn; pe; pd_baro] R = R_gps(6x6) % Flow mode
-    : y = [v_bx; v_by; pd_baro] R = R_flow(3x3) %
-                                            Optical Flow Level 2
-    : vehicle_optical_flow
-      %
-      Outliers are rejected
-      using Channel -
-                                        wise Measurement Gating(Dynamic R).%
-                                            Performance is evaluated using FULL
-                                        - FLIGHT 3D RMSE.%
-                                    == == == == == == == == == == == == == == ==
-                                    == == == == == == == == == == == == == == ==
-                                    == == == == == ==
-        =
-
-            clear;
+% % Task 3, 4 : EKF, UKF, REKF and RUKF with Optical Flow Measurement Model(GPS - Denied) 
+% =========================================================================
+% Runs filters on the full dataset(SELECT dataset 48 or 49).
+% A GPS - denied interval is simulated via denied.m : during that window
+% the filter switches from 'gps' to 'flow'.
+% GPS mode : y = [vn; ve; vd; pn; pe; pd_baro] R = R_gps(6x6) 
+% Flow mode: y = [v_bx; v_by; pd_baro] R = R_flow(3x3) 
+% Optical Flow Level 2: vehicle_optical_flow
+% Outliers are rejected using Channel-wise Measurement Gating(Dynamic R).
+% Performance is evaluated using FULL-FLIGHT 3D RMSE.
+% =========================================================================
+clear;
 clc;
 close all;
 
 % Robustness parameters (TUNED: optimized for minimum 3D Position RMSE)
 % c_grid = [1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07, 1e-06, 1e-05] for tuning
-data_ids = {'46';
-'47';
-'48';
-'49';
-'50'
-}
-;
-c_rekf_vals = [1e-05; 1e-09; 1e-12; 1e-06; 1e-07];
-c_rukf_vals = [1e-07; 1e-09; 1e-12; 1e-06; 1e-05];
+data_ids = {'46'; '47'; '48'; '49'; '50'};
+%c_rekf_vals = [1e-05; 1e-09; 1e-12; 1e-06; 1e-07];
+%c_rukf_vals = [1e-07; 1e-09; 1e-12; 1e-06; 1e-05];
+c_rekf_vals = [1e-05; 1e-10; 1e-05; 1e-05; 1e-06];
+c_rukf_vals = [1e-07; 1e-05; 1e-06; 1e-12; 1e-06];
 params = table(c_rekf_vals, c_rukf_vals, 'RowNames', data_ids);
 
-data_num = '50';
-% SELECT dataset c_rekf = params{data_num, 'c_rekf_vals'};
+data_num = '46'; % SELECT dataset 
+c_rekf = params{data_num, 'c_rekf_vals'};
 c_rukf = params{data_num, 'c_rukf_vals'};
 
-% % 1. Setup paths and load data project_dir = fileparts(mfilename('fullpath'));
+% % 1. Setup paths and load data 
+project_dir = fileparts(mfilename('fullpath'));
 filters_dir = fullfile(project_dir, '..', 'filters');
 data_dir = fullfile(project_dir, '..', 'Data', 'mat');
 addpath(filters_dir);
 addpath(data_dir);
-data_path = fullfile(project_dir, '..', 'Data', 'mat',
-                     sprintf('data_sync_%s.mat', data_num));
+data_path = fullfile(project_dir, '..', 'Data', 'mat', sprintf('data_sync_%s.mat', data_num));
 
-if
-  ~exist(data_path, 'file') error(
-      'Please run Data/mat/DATA_PROCESS.m first to generate data_sync_%s.mat',
-      data_num);
-end fprintf('Loading data from %s...\n', data_path);
+if ~exist(data_path, 'file') 
+    error('Please run Data/mat/DATA_PROCESS.m first to generate data_sync_%s.mat', data_num);
+end 
+fprintf('Loading data from %s...\n', data_path);
 load(data_path);
 % Variables : t_sync, Delta, dtheta, dv, gps_gt, gps_mea, baro_h, dist_h,
-    % q_sync, veh_flow_v,
-    ...
+% q_sync, veh_flow_v,
 
-    N = length(t_sync);
+N = length(t_sync);
 dt = 1 / Delta;
 
-% % 2. GPS - denied interval % T_deny : start of denial(s from beginning),
-    I_deny : duration(s) T_tot = t_sync(N) - t_sync(1);
-I_deny = 50;
+% % 2. GPS - denied interval 
+%T_deny : start of denial(s from beginning) I_deny : duration(s) 
+T_tot = t_sync(N) - t_sync(1);
+I_deny = 25;
 
-% two gps_denied window equidistribuited window =
-    round((T_tot - 2 * I_deny) / 3);
+% two gps_denied window equidistribuited 
+
+window = round((T_tot - 2 * I_deny) / 3);
 
 T_deny_1 = window;
 T_deny_2 = 2 * window + I_deny;
@@ -77,8 +60,8 @@ T_deny_2 = 2 * window + I_deny;
 gps_denied_1 = denied(gps_mea, T_deny_1, I_deny, Delta);
 gps_denied = denied(gps_denied_1, T_deny_2, I_deny, Delta);
 
-% Mode vector : 'gps' outside denial window,
-    'flow' inside deny_start_1 = T_deny_1 * Delta + 1;
+% Mode vector : 'gps' outside denial window, 'flow' inside 
+deny_start_1 = T_deny_1 * Delta + 1;
 deny_end_1 = min((T_deny_1 + I_deny) * Delta, N);
 deny_start_2 = T_deny_2 * Delta + 1;
 deny_end_2 = min((T_deny_2 + I_deny) * Delta, N);
@@ -86,72 +69,67 @@ mode_vec = repmat({'gps'}, N, 1);
 mode_vec(deny_start_1 : deny_end_1) = {'flow'};
 mode_vec(deny_start_2 : deny_end_2) = {'flow'};
 
-% % 3. Initialization start_idx = 1;
-x0 = [q_sync(start_idx, :)'; ... gps_gt(start_idx, 1 : 3)'; ... gps_gt(
-          start_idx, 4 : 5)'; ... -
-          dist_h(start_idx);
-      ... 2.7556e-6 * ones(3, 1);... % [ref:paper] 6.7600e-11 * ones(3, 1)];
-% [ref:paper]
+% % 3. Initialization 
+start_idx = 1;
+x0 = [q_sync(start_idx, :)'; ... 
+    gps_gt(start_idx, 1 : 3)'; ... 
+    gps_gt(start_idx, 4 : 5)'; ... 
+    - dist_h(start_idx);...
+     2.7556e-6 * ones(3, 1);... % [ref:paper]
+    6.7600e-11 * ones(3, 1)]; % [ref:paper]
 
-    P0 = 1e-4 * eye(16);
+P0 = 1e-4 * eye(16);
 
-% % 4. Noise parameters &Gating Threshold %
-    Process noise [ref:calcQ16] Delta_theta_n = [2.6e-5; 2.6e-5; 2.6e-5;];
-% angular increment noise std dev Delta_v_n = [1.66e-3; 1.66e-3; 1.66e-3;];
-% velocity increment noise std dev wb = [2.6e-6; 2.6e-6; 2.6e-6;];
-% gyro bias random walk std dev ab = [1.66e-4; 1.66e-4; 1.66e-4;];
-% accel bias random walk std dev
+% % 4. Noise parameters &Gating Threshold 
+%  Process noise [ref:calcQ16] 
+Delta_theta_n = [2.6e-5; 2.6e-5; 2.6e-5;]; % angular increment noise std dev 
+Delta_v_n = [1.66e-3; 1.66e-3; 1.66e-3;]; % velocity increment noise std dev 
+wb = [2.6e-6; 2.6e-6; 2.6e-6;]; % gyro bias random walk std dev 
+ab = [1.66e-4; 1.66e-4; 1.66e-4;]; % accel bias random walk std dev
 
-    % Measurement noise R_gps =
-    diag([(0.5 * 0.05) ^ 2; (0.5 * 0.05) ^ 2; (0.001 * 0.1) ^ 2;
-          (0.05 * 0.3) ^ 2; (0.05 * 0.3) ^ 2; 0.4 ^ 2]);
-% Tuned 6x6 R_flow = diag([(3.0 * 0.5) ^ 2; (0.25 * 0.4) ^ 2; 0.4 ^ 2]);
-% Tuned 3x3
+% Measurement noise 
+R_gps = diag([(0.5 * 0.05) ^ 2; (0.5 * 0.05) ^ 2; (0.001 * 0.1) ^ 2;
+          (0.05 * 0.3) ^ 2; (0.05 * 0.3) ^ 2; 0.4 ^ 2]); % Tuned 6x6 
+R_flow = diag([(3.0 * 0.5) ^ 2; (0.25 * 0.4) ^ 2; 0.4 ^ 2]); % Tuned 3x3
 
-    % Online outlier gating : Exponential Moving Average(EMA)
-with forgetting factor % mu_k =
-    lam * mu_{k - 1} + (1 - lam) * | x_k | (tracks mean of | v |) % sigma_k =
-        lam * sigma_{k - 1} + (1 - lam) * (x_k - mu) ^
-        2(tracks variance) % threshold = mu_k + 3 * sqrt(sigma_k) lam = 0.98;
-% forgetting factor : higher = slower adaptation(0.95 ~0.99 typical)
-
-                               % Initialize with first sample mu_x =
-                                   abs(veh_flow_v(1, 1));
-var_x = 0;
-mu_y = abs(veh_flow_v(1, 2));
-var_y = 0;
+% Online outlier gating : Exponential Moving Average(EMA) with forgetting factor  
+% mu_k = lam * mu_{k - 1} + (1 - lam) * | x_k | (tracks mean of | v |) 
+% sigma_k = lam * sigma_{k - 1} + (1 - lam) * (x_k - mu) ^2(tracks variance) 
+% threshold = mu_k + 3 * sqrt(sigma_k) 
+lam = 0.98; % forgetting factor : higher = slower adaptation(0.95 ~0.99 typical)
+% Initialize with first sample 
+mu_x = abs(veh_flow_v(1, 1)); var_x = 0;
+mu_y = abs(veh_flow_v(1, 2)); var_y = 0;
 
 VEL_THR_x = zeros(N, 1);
 VEL_THR_y = zeros(N, 1);
-VEL_THR_x(1) = 5.0;
-% conservative initial threshold VEL_THR_y(1) = 5.0;
+VEL_THR_x(1) = 5.0; % conservative initial threshold 
+VEL_THR_y(1) = 5.0;
 
 burn_in = 100;
 
-for
-  k = 2 : N xk = veh_flow_v(k - 1, 1);
-yk = veh_flow_v(k - 1, 2);
-% Robust EMA : only update if sample is NOT an outlier %
-               Always update during the burn -
-            in period to initialize variance if k <
-        burn_in ||
-    abs(xk) < VEL_THR_x(k - 1) mu_x = lam * mu_x + (1 - lam) * abs(xk);
-var_x = lam * var_x + (1 - lam) * (xk - mu_x) ^ 2;
-end if k < burn_in ||
-    abs(yk) < VEL_THR_y(k - 1) mu_y = lam * mu_y + (1 - lam) * abs(yk);
-var_y = lam * var_y + (1 - lam) * (yk - mu_y) ^ 2;
-end
+for k = 2 : N 
+    xk = veh_flow_v(k - 1, 1);
+    yk = veh_flow_v(k - 1, 2);
+    % Robust EMA : only update if sample is NOT an outlier
+    % Always update during the burn - in period to initialize variance 
+    if k < burn_in || abs(xk) < VEL_THR_x(k - 1) 
+        mu_x = lam * mu_x + (1 - lam) * abs(xk);
+        var_x = lam * var_x + (1 - lam) * (xk - mu_x) ^ 2;
+    end 
+    if k < burn_in || abs(yk) < VEL_THR_y(k - 1) 
+        mu_y = lam * mu_y + (1 - lam) * abs(yk);
+        var_y = lam * var_y + (1 - lam) * (yk - mu_y) ^ 2;
+    end
 
     VEL_THR_x(k) = max(mu_x + 3 * sqrt(var_x), 1.0);
-VEL_THR_y(k) = max(mu_y + 3 * sqrt(var_y), 1.0);
+    VEL_THR_y(k) = max(mu_y + 3 * sqrt(var_y), 1.0);
 end
 
-    fprintf('====================================================\n');
+fprintf('====================================================\n');
 fprintf('Online Gating: EMA forgetting factor = %.2f\n', lam);
-fprintf('  Threshold X range: [%.3f, %.3f] m/s\n', min(VEL_THR_x(100 : end)),
-        max(VEL_THR_x(100 : end)));
-fprintf('  Threshold Y range: [%.3f, %.3f] m/s\n', min(VEL_THR_y(100 : end)),
-        max(VEL_THR_y(100 : end)));
+fprintf('  Threshold X range: [%.3f, %.3f] m/s\n', min(VEL_THR_x(100 : end)), max(VEL_THR_x(100 : end)));
+fprintf('  Threshold Y range: [%.3f, %.3f] m/s\n', min(VEL_THR_y(100 : end)), max(VEL_THR_y(100 : end)));
 fprintf('====================================================\n');
 
 % % 5. Filter Loops(EKF, UKF, REKF, RUKF) fprintf('Running all filters...\n');
@@ -172,15 +150,11 @@ P_rukf = P0;
 theta_rukf = zeros(N, 1);
 
 % EKF(with gating statistics) tic;
-gated_x = 0;
-gated_y = 0;
-flow_total = 0;
-for
-  k = 1 : N - 1 md = mode_vec{k};
-dth = dtheta(k, :);
-dvk = dv(k, :);
+gated_x = 0; gated_y = 0; flow_total = 0;
+for k = 1 : N - 1 
+    md = mode_vec{k}; dth = dtheta(k, :); dvk = dv(k, :);
 
-if strcmp (md, 'gps'), y_k = [gps_denied(k,1:5)'; baro_h(k,1)]; R_k = R_gps;
+    if strcmp (md, 'gps'), y_k = [gps_denied(k,1:5)'; baro_h(k,1)]; R_k = R_gps;
     else
         y_k = [veh_flow_v(k,1:2)'; baro_h(k,1)]; R_k = R_flow;
         flow_total = flow_total + 1;

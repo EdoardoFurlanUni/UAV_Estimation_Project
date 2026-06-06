@@ -4,4 +4,4 @@ Data/mat/log_*/
 .DS_Store
 *.asv
 *.log
-project/*.png
+#project/*.png

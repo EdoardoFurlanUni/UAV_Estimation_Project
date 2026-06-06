@@ -75,7 +75,7 @@ for f = 1:size(folders, 1)
     fprintf('  EMA Rejected: X=%d/%d (%.1f%%), Y=%d/%d (%.1f%%)\n', ...
         ema_rej_x, Ns, 100*ema_rej_x/Ns, ema_rej_y, Ns, 100*ema_rej_y/Ns);
     
-    figure('Name', sprintf('Dataset %s — Thresholds', label), ...
+    fig = figure('Visible', 'off', 'Name', sprintf('Dataset %s — Thresholds', label), ...
            'NumberTitle', 'off', 'Units', 'normalized', ...
            'OuterPosition', [0.05 0.05 0.9 0.9]);
     
@@ -116,6 +116,13 @@ for f = 1:size(folders, 1)
     ylabel('v_y body (m/s)'); xlabel('Time (s)');
     title(sprintf('Dataset %s - v_y', label));
     legend('Location', 'best'); grid on; hold off;
+    
+    % Save figure
+    project_dir = fileparts(mfilename('fullpath'));
+    set(fig, 'PaperPositionMode', 'auto');
+    print(fig, fullfile(project_dir, sprintf('Threshold_Comparison_%s', label)), '-dpng', '-r600');
+    fprintf('Saved: Threshold_Comparison_%s.png\n', label);
+    close(fig);
 end
 
 fprintf('\nLegend:\n');

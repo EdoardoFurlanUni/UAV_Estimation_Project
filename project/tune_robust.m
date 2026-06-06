@@ -6,6 +6,10 @@
 % =========================================================================
 clear; clc; close all;
 
+project_dir = fileparts(mfilename('fullpath'));
+addpath(fullfile(project_dir, '..', 'filters'));
+addpath(fullfile(project_dir, '..', 'Data', 'mat'));
+
 datasets = {'46', '47', '48', '49', '50'};
 c_scales = logspace(-12, -4, 9);
 n_c = length(c_scales);
@@ -35,13 +39,26 @@ for d = 1:length(datasets)
     dt = 1 / Delta;
     
     %% GPS-denied interval
-    T_deny = 100; I_deny = 50; % From task34
-    gps_denied = denied(gps_mea, T_deny, I_deny, Delta);
+    T_tot = t_sync(N) - t_sync(1);
+    I_deny = 25;
     
-    deny_start = T_deny * Delta + 1;
-    deny_end   = min((T_deny + I_deny) * Delta, N);
-    mode_vec   = repmat({'gps'}, N, 1);
-    mode_vec(deny_start:deny_end) = {'flow'};
+    % two gps_denied window equidistributed
+    window = round((T_tot - 2 * I_deny) / 3);
+    
+    T_deny_1 = window;
+    T_deny_2 = 2 * window + I_deny;
+    
+    gps_denied_1 = denied(gps_mea, T_deny_1, I_deny, Delta);
+    gps_denied = denied(gps_denied_1, T_deny_2, I_deny, Delta);
+    
+    % Mode vector : 'gps' outside denial window, 'flow' inside
+    deny_start_1 = T_deny_1 * Delta + 1;
+    deny_end_1   = min((T_deny_1 + I_deny) * Delta, N);
+    deny_start_2 = T_deny_2 * Delta + 1;
+    deny_end_2   = min((T_deny_2 + I_deny) * Delta, N);
+    mode_vec = repmat({'gps'}, N, 1);
+    mode_vec(deny_start_1 : deny_end_1) = {'flow'};
+    mode_vec(deny_start_2 : deny_end_2) = {'flow'};
     
     %% EMA thresholds
     lam = 0.98;
