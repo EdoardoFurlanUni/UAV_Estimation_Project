@@ -5,3 +5,12 @@ Data/mat/log_*/
 *.asv
 *.log
 #project/*.png
+# LaTeX temporary files
+*.aux
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.toc
+*.out
+*.blg
+*.bbl
