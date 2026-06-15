@@ -9,7 +9,7 @@
 
 \section*{Outlier Rejection}
 
-Analyxing the quality flag of the optical flow measurement we notice three different values: 255, 122 and 0.
+Analyzing the quality flag of the optical flow measurement we notice three different values: 255, 122 and 0.
 Since most of the measurement values are set to 255 we tried to analyze the ones that were different: however we noticed very few "low" quality values that actually identified outliers. Since this set of values wasn't faithful we avoided it and instead opted for an adaptive gating strategy based on the EMA (Exponential Moving Average).
 This technique allows us to use only the past data to define the thresholds. As can be seen from the picture, the threshold does not reject the values as well as the mean three sigma evaluated over the whole dataset, but is still able to remove some of the outliers. We however noticed no evident difference in the final performance when using the two different techniques.
 
@@ -19,8 +19,8 @@ The measurement noise covariance matrices ($R_{gps}$ and $R_{flow}$), the UKF sc
 Performances obtained by changing parameters of the covariance matrices are evaluated on Dataset 49 using EKF.
 \subsection*{Four-Stage Methodology}
 \begin{enumerate}
-    \item \textbf{Phase 1 - GPS Noise ($R_{gps}$):} Optimization of the 6x6 GPS covariance matrix and barometer noise conducted \textbf{exclusively} during flight phases where GPS signals were available.
-    \item \textbf{Phase 2 - Optical Flow Noise ($R_{flow}$) and Gating:} Sintonization of the 3x3 sensor matrix executed \textbf{only} within the simulated GPS-Denied windows. Notice the use of the outlier threshold calculated via the EMA.
+    \item \textbf{Phase 1 - GPS Noise ($R_{gps}$):} Optimization of the 6x6 GPS covariance matrix and barometer noise conducted \textbf{exclusively} during flight phases where GPS signals were available. We focus only on the first 5 components of the GPS covariance matrix ($v_n$, $v_e$, $v_d$, $p_n$, $p_e$), since for the last component ($p_d$) we rely on the barometer data.
+    \item \textbf{Phase 2 - Optical Flow Noise ($R_{flow}$) and Gating:} Sintonization of the 3x3 sensor matrix executed \textbf{only} within the simulated GPS-Denied windows. Notice the use of the outlier threshold calculated via the EMA. Also in this case, we focus only on the first 2 components of the optical flow covariance matric ($v_x$, $v_y$), since for the last component ($p_d$) we rely on the barometer data.
     \item \textbf{Phase 3 - UKF $\alpha$ Parameter:} A 1D grid search over $\alpha \in [10^{-4}, 1]$ was performed to scale the Sigma Points dispersion.
     \item \textbf{Phase 4 - Robustness Parameter $c$:} A logarithmic sweep from $10^{-12}$ to $10^{-4}$ was carried out to optimize the worst-case bound within the robust estimators (REKF/RUKF). Results indicate that the optimal $c$ is highly dependent on dataset-specific characteristics.
 \end{enumerate}
@@ -29,9 +29,9 @@ Performances obtained by changing parameters of the covariance matrices are eval
 
 For the down position we couldn't use gps data due to their unreliability (the down coordinate showed very unrealistic data) we needed to always use as ground truth the distance sensor data.
 
-This meant that the measure tends to drift as time moves on, causing the 3D position error to be very high. To isolate the horizontal tracking accuracy (reliant on Optical Flow integration) from vertical tracking degradation , we introduce the **2D Position RMSE** metric (calculated solely on North and East coordinates, omitting the Down component).
+This meant that the measure tends to drift as time moves on, causing the 3D position error to be very high. To isolate the horizontal tracking accuracy (reliant on Optical Flow integration) from vertical tracking degradation , we introduce the \textbf{2D Position RMSE} metric (calculated only on North and East coordinates, omitting the Down component).
 
-The table below outlines the results obtained on \textbf{Dataset 49} with two GPS-Denied windows to 25 seconds each:
+The table below outlines the results obtained on \textbf{Dataset 49} with two GPS-Denied windows of 25 seconds each:
 
 \begin{table}[h!]
 \centering
@@ -47,9 +47,8 @@ RUKF & 49.22 & 3.6336   & 3.2856   & 1.4381  \\ \hline
 \label{tab:results_2d}
 \end{table}
 
-All the other metrics can be seen from the images inside the \textit{project} folder, toghether with the optical flow data from task2.
+All the other metrics can be seen from the images inside the \textit{project} folder, toghether with the optical flow data from task2.\\
 
-\newpage
 \textbf{Discussion of Results:}
 \begin{itemize}
     \item \textbf{Error Isolation (3D vs. 2D):} The 2D metric show a more realistic picture of the comparison of the estimators since it isolates the horizontal tracking accuracy from vertical tracking degradation.
