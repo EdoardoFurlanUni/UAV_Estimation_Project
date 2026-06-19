@@ -17,8 +17,9 @@
 %   Level 3 | PX4 EKF output (estimator_optical_flow_vel)
 %              Gyro-compensated body/NE velocity from PX4 internal EKF
 %      
-%   This version replaces RMSE with Robust Standard Deviation (via MAD) 
-%   to accurately estimate nominal noise by rejecting outliers.
+%   Robust Standard Deviation (via MAD) is used instead of RMSE
+%   to compare the accuracy of the three optical flow levels
+%   against the model prediction, without being inflated by outliers.
 % =========================================================================
 
 clear; clc; close all;
@@ -34,6 +35,8 @@ folder_num = input('Please enter the data number to be read:','s');
 
 project_dir = fileparts(mfilename('fullpath'));
 filters_dir = fullfile(project_dir, '..', 'filters');
+plots_dir   = fullfile(project_dir, 'PLOTS');
+if ~exist(plots_dir, 'dir'), mkdir(plots_dir); end
 addpath(filters_dir);
 num_only   = strtok(folder_num, '_');
 data_path  = fullfile(project_dir, '..', 'Data', 'mat', sprintf('data_sync_%s.mat', num_only));
@@ -134,6 +137,6 @@ sgtitle('Task 2 - Optical Flow Measurement Model Accuracy Verification', 'FontWe
 % -------------------------------------------------------------------------
 %% Save all figures
 set(fig, 'PaperPositionMode', 'auto');
-print(fig, fullfile(project_dir, sprintf('Task2_%s', num_only)), '-dpng', '-r600');
-fprintf('\nFigure saved: Task2_%s.png\n', num_only);
+print(fig, fullfile(plots_dir, sprintf('Task2_%s', num_only)), '-dpng', '-r600');
+fprintf('\nFigure saved: PLOTS/Task2_%s.png\n', num_only);
 

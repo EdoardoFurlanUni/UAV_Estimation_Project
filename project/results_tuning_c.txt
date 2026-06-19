@@ -1,0 +1,140 @@
+==========================================================
+          STARTING ROBUSTNESS TUNING (c)                  
+==========================================================
+
+>>> Processing Dataset 46...
+--- Tuning REKF ---
+  c = 1e-12 => Pos RMSE = 30.1922 m
+  c = 1e-11 => Pos RMSE = 30.1452 m
+  c = 1e-10 => Pos RMSE = 29.8040 m
+  c = 1e-09 => Pos RMSE = 29.3784 m
+  c = 1e-08 => Pos RMSE = 25.1249 m
+  c = 1e-07 => Pos RMSE = 9.0394 m
+  c = 1e-06 => Pos RMSE = 8.4517 m
+  c = 1e-05 => Pos RMSE = 4.1555 m
+  c = 1e-04 => Pos RMSE = 108.4680 m
+  >> Best REKF c: 1e-05
+
+--- Tuning RUKF ---
+  c = 1e-12 => Pos RMSE = 9.6709 m
+  c = 1e-11 => Pos RMSE = 9.6707 m
+  c = 1e-10 => Pos RMSE = 9.6689 m
+  c = 1e-09 => Pos RMSE = 9.6543 m
+  c = 1e-08 => Pos RMSE = 9.6979 m
+  c = 1e-07 => Pos RMSE = 12.1079 m
+  c = 1e-06 => Pos RMSE = 10.8520 m
+  c = 1e-05 => Pos RMSE = 7.6524 m
+  c = 1e-04 => Pos RMSE = 21.9338 m
+  >> Best RUKF c: 1e-05
+
+
+>>> Processing Dataset 47...
+--- Tuning REKF ---
+  c = 1e-12 => Pos RMSE = 5.2363 m
+  c = 1e-11 => Pos RMSE = 4.6269 m
+  c = 1e-10 => Pos RMSE = 5.0541 m
+  c = 1e-09 => Pos RMSE = 8.3190 m
+  c = 1e-08 => Pos RMSE = 7.3121 m
+  c = 1e-07 => Pos RMSE = 8.1807 m
+  c = 1e-06 => Pos RMSE = 9.5489 m
+  c = 1e-05 => Pos RMSE = 25.8207 m
+  c = 1e-04 => Pos RMSE = 33.0538 m
+  >> Best REKF c: 1e-11
+
+--- Tuning RUKF ---
+  c = 1e-12 => Pos RMSE = 11.5129 m
+  c = 1e-11 => Pos RMSE = 11.5181 m
+  c = 1e-10 => Pos RMSE = 11.6463 m
+  c = 1e-09 => Pos RMSE = 12.5978 m
+  c = 1e-08 => Pos RMSE = 12.2852 m
+  c = 1e-07 => Pos RMSE = 13.8421 m
+  c = 1e-06 => Pos RMSE = 17.6921 m
+  c = 1e-05 => Pos RMSE = 7.5458 m
+  c = 1e-04 => Pos RMSE = 17.7702 m
+  >> Best RUKF c: 1e-05
+
+
+>>> Processing Dataset 48...
+--- Tuning REKF ---
+  c = 1e-12 => Pos RMSE = 19.7353 m
+  c = 1e-11 => Pos RMSE = 19.6881 m
+  c = 1e-10 => Pos RMSE = 22.1077 m
+  c = 1e-09 => Pos RMSE = 22.1530 m
+  c = 1e-08 => Pos RMSE = 19.2414 m
+  c = 1e-07 => Pos RMSE = 21.1201 m
+  c = 1e-06 => Pos RMSE = 43.0242 m
+  c = 1e-05 => Pos RMSE = 3.2537 m
+  c = 1e-04 => Pos RMSE = 104.5367 m
+  >> Best REKF c: 1e-05
+
+--- Tuning RUKF ---
+  c = 1e-12 => Pos RMSE = 5.3487 m
+  c = 1e-11 => Pos RMSE = 5.3403 m
+  c = 1e-10 => Pos RMSE = 5.3095 m
+  c = 1e-09 => Pos RMSE = 5.2259 m
+  c = 1e-08 => Pos RMSE = 5.0022 m
+  c = 1e-07 => Pos RMSE = 5.9400 m
+  c = 1e-06 => Pos RMSE = 9.8683 m
+  c = 1e-05 => Pos RMSE = 7.7573 m
+  c = 1e-04 => Pos RMSE = 37.5672 m
+  >> Best RUKF c: 1e-08
+
+
+>>> Processing Dataset 49...
+--- Tuning REKF ---
+  c = 1e-12 => Pos RMSE = 7.2035 m
+  c = 1e-11 => Pos RMSE = 7.1339 m
+  c = 1e-10 => Pos RMSE = 13.8336 m
+  c = 1e-09 => Pos RMSE = 8.4099 m
+  c = 1e-08 => Pos RMSE = 5.3977 m
+  c = 1e-07 => Pos RMSE = 5.8450 m
+  c = 1e-06 => Pos RMSE = 6.6195 m
+  c = 1e-05 => Pos RMSE = 9.9336 m
+  c = 1e-04 => Pos RMSE = 258.9807 m
+  >> Best REKF c: 1e-08
+
+--- Tuning RUKF ---
+  c = 1e-12 => Pos RMSE = 4.7833 m
+  c = 1e-11 => Pos RMSE = 5.4579 m
+  c = 1e-10 => Pos RMSE = 5.2039 m
+  c = 1e-09 => Pos RMSE = 6.0406 m
+  c = 1e-08 => Pos RMSE = 9.5702 m
+  c = 1e-07 => Pos RMSE = 4.0172 m
+  c = 1e-06 => Pos RMSE = 6.2096 m
+  c = 1e-05 => Pos RMSE = 3.2519 m
+  c = 1e-04 => Pos RMSE = 31.1234 m
+  >> Best RUKF c: 1e-05
+
+
+>>> Processing Dataset 50...
+--- Tuning REKF ---
+  c = 1e-12 => Pos RMSE = 3.9835 m
+  c = 1e-11 => Pos RMSE = 3.9940 m
+  c = 1e-10 => Pos RMSE = 4.0112 m
+  c = 1e-09 => Pos RMSE = 4.5654 m
+  c = 1e-08 => Pos RMSE = 3.0546 m
+  c = 1e-07 => Pos RMSE = 12.2002 m
+  c = 1e-06 => Pos RMSE = 2.7980 m
+  c = 1e-05 => Pos RMSE = 4.2365 m
+  c = 1e-04 => Pos RMSE = 72.1405 m
+  >> Best REKF c: 1e-06
+
+--- Tuning RUKF ---
+  c = 1e-12 => Pos RMSE = 6.7936 m
+  c = 1e-11 => Pos RMSE = 6.8286 m
+  c = 1e-10 => Pos RMSE = 6.6548 m
+  c = 1e-09 => Pos RMSE = 7.1729 m
+  c = 1e-08 => Pos RMSE = 6.6432 m
+  c = 1e-07 => Pos RMSE = 3.4115 m
+  c = 1e-06 => Pos RMSE = 2.5717 m
+  c = 1e-05 => Pos RMSE = 4.8735 m
+  c = 1e-04 => Pos RMSE = 9.3704 m
+  >> Best RUKF c: 1e-06
+
+==========================================================
+          FINAL ROBUSTNESS PARAMETERS TO USE IN task34.m  
+==========================================================
+data_ids = {'46'; '47';'48'; '49'; '50'};
+c_rekf_vals = [1e-05; 1e-11; 1e-05; 1e-08; 1e-06];
+c_rukf_vals = [1e-05; 1e-05; 1e-08; 1e-05; 1e-06];
+==========================================================

@@ -1,35 +1,36 @@
-% % Task 3, 4 : EKF, UKF, REKF and RUKF with Optical Flow Measurement Model(GPS - Denied) 
+% % Task 3, 4 : EKF, UKF, REKF and RUKF with Optical Flow Measurement Model (GPS-Denied) 
 % =========================================================================
-% Runs filters on the full dataset(SELECT dataset 48 or 49).
-% A GPS - denied interval is simulated via denied.m : during that window
+% Runs filters on the full dataset (SELECT dataset: 46, 47, 48, 49, or 50).
+% Two GPS-denied intervals are simulated via denied.m : during those windows
 % the filter switches from 'gps' to 'flow'.
-% GPS mode : y = [vn; ve; vd; pn; pe; pd_baro] R = R_gps(6x6) 
-% Flow mode: y = [v_bx; v_by; pd_baro] R = R_flow(3x3) 
+% GPS mode : y = [vn; ve; vd; pn; pe; pd_baro] R = R_gps (6x6) 
+% Flow mode: y = [v_bx; v_by; pd_baro] R = R_flow (3x3) 
 % Optical Flow Level 2: vehicle_optical_flow
-% Outliers are rejected using Channel-wise Measurement Gating(Dynamic R).
+% Outliers are rejected using Channel-wise Measurement Gating (Dynamic R).
 % Performance is evaluated using FULL-FLIGHT 3D RMSE.
 % =========================================================================
 clear;
 clc;
 close all;
 
+data_num = '49'; % SELECT dataset 
+
 % Robustness parameters (TUNED: optimized for minimum 3D Position RMSE)
-% c_grid = [1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07, 1e-06, 1e-05] for tuning
+% c_grid = [1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07, 1e-06, 1e-05, 1e-04] for tuning
 data_ids = {'46'; '47'; '48'; '49'; '50'};
-%c_rekf_vals = [1e-05; 1e-09; 1e-12; 1e-06; 1e-07];
-%c_rukf_vals = [1e-07; 1e-09; 1e-12; 1e-06; 1e-05];
-c_rekf_vals = [1e-05; 1e-10; 1e-05; 1e-05; 1e-06];
-c_rukf_vals = [1e-07; 1e-05; 1e-06; 1e-12; 1e-06];
+c_rekf_vals = [1e-05; 1e-11; 1e-05; 1e-08; 1e-06];
+c_rukf_vals = [1e-05; 1e-05; 1e-08; 1e-05; 1e-06];
 params = table(c_rekf_vals, c_rukf_vals, 'RowNames', data_ids);
 
-data_num = '46'; % SELECT dataset 
 c_rekf = params{data_num, 'c_rekf_vals'};
 c_rukf = params{data_num, 'c_rukf_vals'};
 
 % % 1. Setup paths and load data 
 project_dir = fileparts(mfilename('fullpath'));
 filters_dir = fullfile(project_dir, '..', 'filters');
-data_dir = fullfile(project_dir, '..', 'Data', 'mat');
+data_dir    = fullfile(project_dir, '..', 'Data', 'mat');
+plots_dir   = fullfile(project_dir, 'PLOTS');
+if ~exist(plots_dir, 'dir'), mkdir(plots_dir); end
 addpath(filters_dir);
 addpath(data_dir);
 data_path = fullfile(project_dir, '..', 'Data', 'mat', sprintf('data_sync_%s.mat', data_num));
@@ -46,11 +47,11 @@ N = length(t_sync);
 dt = 1 / Delta;
 
 % % 2. GPS - denied interval 
-%T_deny : start of denial(s from beginning) I_deny : duration(s) 
+% T_deny_1, T_deny_2 : start of each denial window (s from beginning), I_deny : duration (s)
 T_tot = t_sync(N) - t_sync(1);
 I_deny = 25;
 
-% two gps_denied window equidistribuited 
+% two GPS-denied windows, equidistributed
 
 window = round((T_tot - 2 * I_deny) / 3);
 
@@ -60,7 +61,7 @@ T_deny_2 = 2 * window + I_deny;
 gps_denied_1 = denied(gps_mea, T_deny_1, I_deny, Delta);
 gps_denied = denied(gps_denied_1, T_deny_2, I_deny, Delta);
 
-% Mode vector : 'gps' outside denial window, 'flow' inside 
+% Mode vector : 'gps' outside denial windows, 'flow' inside
 deny_start_1 = T_deny_1 * Delta + 1;
 deny_end_1 = min((T_deny_1 + I_deny) * Delta, N);
 deny_start_2 = T_deny_2 * Delta + 1;
@@ -80,21 +81,22 @@ x0 = [q_sync(start_idx, :)'; ...
 
 P0 = 1e-4 * eye(16);
 
-% % 4. Noise parameters &Gating Threshold 
+% % 4. Noise parameters & Gating Threshold 
 %  Process noise [ref:calcQ16] 
 Delta_theta_n = [2.6e-5; 2.6e-5; 2.6e-5;]; % angular increment noise std dev 
 Delta_v_n = [1.66e-3; 1.66e-3; 1.66e-3;]; % velocity increment noise std dev 
 wb = [2.6e-6; 2.6e-6; 2.6e-6;]; % gyro bias random walk std dev 
 ab = [1.66e-4; 1.66e-4; 1.66e-4;]; % accel bias random walk std dev
 
-% Measurement noise 
+% Measurement noise
 R_gps = diag([(0.5 * 0.05) ^ 2; (0.5 * 0.05) ^ 2; (0.001 * 0.1) ^ 2;
-          (0.05 * 0.3) ^ 2; (0.05 * 0.3) ^ 2; 0.4 ^ 2]); % Tuned 6x6 
+          (0.05 * 0.3) ^ 2; (0.05 * 0.3) ^ 2; 0.4 ^ 2]); % Tuned 6x6
 R_flow = diag([(3.0 * 0.5) ^ 2; (0.25 * 0.4) ^ 2; 0.4 ^ 2]); % Tuned 3x3
+alpha = 5e-4; % UKF/RUKF spread parameter (tuned via grid search on dataset 49)
 
 % Online outlier gating : Exponential Moving Average(EMA) with forgetting factor  
 % mu_k = lam * mu_{k - 1} + (1 - lam) * | x_k | (tracks mean of | v |) 
-% sigma_k = lam * sigma_{k - 1} + (1 - lam) * (x_k - mu) ^2(tracks variance) 
+% sigma_k = lam * sigma_{k - 1} + (1 - lam) * (|x_k| - mu)^2 (tracks variance of |v|)
 % threshold = mu_k + 3 * sqrt(sigma_k) 
 lam = 0.98; % forgetting factor : higher = slower adaptation(0.95 ~0.99 typical)
 % Initialize with first sample 
@@ -115,11 +117,11 @@ for k = 2 : N
     % Always update during the burn - in period to initialize variance 
     if k < burn_in || abs(xk) < VEL_THR_x(k - 1) 
         mu_x = lam * mu_x + (1 - lam) * abs(xk);
-        var_x = lam * var_x + (1 - lam) * (xk - mu_x) ^ 2;
-    end 
-    if k < burn_in || abs(yk) < VEL_THR_y(k - 1) 
+        var_x = lam * var_x + (1 - lam) * (abs(xk) - mu_x) ^ 2;
+    end
+    if k < burn_in || abs(yk) < VEL_THR_y(k - 1)
         mu_y = lam * mu_y + (1 - lam) * abs(yk);
-        var_y = lam * var_y + (1 - lam) * (yk - mu_y) ^ 2;
+        var_y = lam * var_y + (1 - lam) * (abs(yk) - mu_y) ^ 2;
     end
 
     VEL_THR_x(k) = max(mu_x + 3 * sqrt(var_x), 1.0);
@@ -132,7 +134,8 @@ fprintf('  Threshold X range: [%.3f, %.3f] m/s\n', min(VEL_THR_x(100 : end)), ma
 fprintf('  Threshold Y range: [%.3f, %.3f] m/s\n', min(VEL_THR_y(100 : end)), max(VEL_THR_y(100 : end)));
 fprintf('====================================================\n');
 
-% % 5. Filter Loops(EKF, UKF, REKF, RUKF) fprintf('Running all filters...\n');
+% % 5. Filter Loops (EKF, UKF, REKF, RUKF)
+fprintf('Running all filters...\n');
 
 X_ekf = zeros(16, N);
 X_ekf( :, 1) = x0;
@@ -149,7 +152,8 @@ X_rukf( :, 1) = x0;
 P_rukf = P0;
 theta_rukf = zeros(N, 1);
 
-% EKF(with gating statistics) tic;
+% EKF (with gating statistics)
+tic;
 gated_x = 0; gated_y = 0; flow_total = 0;
 for k = 1 : N - 1 
     md = mode_vec{k}; dth = dtheta(k, :); dvk = dv(k, :);
@@ -165,8 +169,8 @@ for k = 1 : N - 1
     [X_ekf(:,k+1), P_ekf] = EKF_UAV(X_ekf(:,k), y_k, P_ekf, R_k, dth, dvk, Delta_theta_n, Delta_v_n, wb, ab, dt, md);
 end
 time_ekf = toc;
-fprintf('EKF_UAV done in %.2f s\n', time_ekf);
 fprintf('  Gating stats: %d/%d X-axis rejected, %d/%d Y-axis rejected\n', gated_x, flow_total, gated_y, flow_total);
+fprintf('EKF_UAV done in %.2f s\n', time_ekf);
 
 % UKF
 tic;
@@ -180,7 +184,7 @@ for k = 1:N-1
         if abs(y_k(2)) > VEL_THR_y(k), R_k(2,2) = R_k(2,2) * 1e6; end
     end
 
-    [X_ukf(:,k+1), P_ukf] = UKF_UAV(X_ukf(:,k), y_k, P_ukf, R_k, dth, dvk, Delta_theta_n, Delta_v_n, wb, ab, dt, md, 0.50);
+    [X_ukf(:,k+1), P_ukf] = UKF_UAV(X_ukf(:,k), y_k, P_ukf, R_k, dth, dvk, Delta_theta_n, Delta_v_n, wb, ab, dt, md, alpha);
 end
 time_ukf = toc;
 fprintf('UKF_UAV done in %.2f s\n', time_ukf);
@@ -214,7 +218,7 @@ for k = 1:N-1
         if abs(y_k(2)) > VEL_THR_y(k), R_k(2,2) = R_k(2,2) * 1e6; end
     end
 
-    [X_rukf(:,k+1), P_rukf, theta_rukf(k)] = RUKF_UAV(X_rukf(:,k), y_k, P_rukf, R_k, dth, dvk, Delta_theta_n, Delta_v_n, wb, ab, dt, md, c_rukf, 0.50);
+    [X_rukf(:,k+1), P_rukf, theta_rukf(k)] = RUKF_UAV(X_rukf(:,k), y_k, P_rukf, R_k, dth, dvk, Delta_theta_n, Delta_v_n, wb, ab, dt, md, c_rukf, alpha);
 end
 time_rukf = toc;
 fprintf('RUKF_UAV done in %.2f s\n', time_rukf);
@@ -281,7 +285,7 @@ for j = 1:3
     plot(t_sync, X_rekf(4+j,:)',   'r--', 'LineWidth', lw_ref, 'DisplayName', 'REKF');
     plot(t_sync, X_rukf(4+j,:)',   'b--', 'LineWidth', lw_ref, 'DisplayName', 'RUKF');
     xregion(t_sync(deny_start_1), t_sync(deny_end_1), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
-    xregion(t_sync(deny_start_2), t_sync(deny_end_2), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
+    xregion(t_sync(deny_start_2), t_sync(deny_end_2), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'HandleVisibility', 'off');
     ylabel(labels_v{j}, 'FontWeight', 'normal');
     if j == 3, xlabel('Time (s)'); end
     xlim([t_sync(1) t_sync(end)]);
@@ -309,7 +313,7 @@ for j = 1:3
     plot(t_sync, X_rekf(7+j,:)',   'r--', 'LineWidth', lw_ref, 'DisplayName', 'REKF');
     plot(t_sync, X_rukf(7+j,:)',   'b--', 'LineWidth', lw_ref, 'DisplayName', 'RUKF');
     xregion(t_sync(deny_start_1), t_sync(deny_end_1), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
-    xregion(t_sync(deny_start_2), t_sync(deny_end_2), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
+    xregion(t_sync(deny_start_2), t_sync(deny_end_2), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'HandleVisibility', 'off');
     ylabel(labels_p{j}, 'FontWeight', 'normal');
     if j == 3, xlabel('Time (s)'); end
     xlim([t_sync(1) t_sync(end)]);
@@ -330,7 +334,7 @@ hold on; grid on;
 plot(t_sync(1:N-1), theta_rekf(1:N-1), 'r--', 'LineWidth', 1.5, 'DisplayName', 'REKF \theta');
 plot(t_sync(1:N-1), theta_rukf(1:N-1), 'b--', 'LineWidth', 1.5, 'DisplayName', 'RUKF \theta');
 xregion(t_sync(deny_start_1), t_sync(deny_end_1), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
-xregion(t_sync(deny_start_2), t_sync(deny_end_2), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'DisplayName', 'GPS denied');
+xregion(t_sync(deny_start_2), t_sync(deny_end_2), 'FaceColor', [0.9 0.9 0], 'FaceAlpha', 0.2, 'HandleVisibility', 'off');
 ylabel('\theta', 'FontWeight', 'normal', 'FontSize', 12); 
 xlabel('Time (s)');
 title('Robust Parameter (\theta) Evolution over Time', 'FontSize', 12);
@@ -341,7 +345,7 @@ xlim([t_sync(1) t_sync(end)]);
 set(fig_vel, 'PaperPositionMode', 'auto');
 set(fig_pos, 'PaperPositionMode', 'auto');
 set(fig_theta, 'PaperPositionMode', 'auto');
-print(fig_vel, fullfile(project_dir, sprintf('Task34_Velocity_%s', data_num)), '-dpng', '-r600');
-print(fig_pos, fullfile(project_dir, sprintf('Task34_Position_%s', data_num)), '-dpng', '-r600');
-print(fig_theta, fullfile(project_dir, sprintf('Task34_Theta_%s', data_num)), '-dpng', '-r600');
+print(fig_vel,   fullfile(plots_dir, sprintf('Task34_Velocity_%s',  data_num)), '-dpng', '-r600');
+print(fig_pos,   fullfile(plots_dir, sprintf('Task34_Position_%s', data_num)), '-dpng', '-r600');
+print(fig_theta, fullfile(plots_dir, sprintf('Task34_Theta_%s',    data_num)), '-dpng', '-r600');
 fprintf('Figures saved successfully.\n');
