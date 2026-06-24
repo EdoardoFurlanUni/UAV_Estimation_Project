@@ -1,7 +1,7 @@
 %% TUNE_ROBUST: Script to find the optimal robustness parameter (c)
 % =========================================================================
 % Performs a 1D grid search on the robustness parameter 'c' for both 
-% REKF and RUKF across multiple datasets (48 and 49).
+% REKF and RUKF across multiple datasets.
 % Uses the previously tuned R_gps, R_flow, and alpha parameters.
 % =========================================================================
 clear; clc; close all;
@@ -18,10 +18,12 @@ best_c_rekf = zeros(length(datasets), 1);
 best_c_rukf = zeros(length(datasets), 1);
 
 %% Tuned Parameters (From grid_search & alpha tuning)
-R_gps  = diag([(0.5*0.05)^2; (0.5*0.05)^2; (0.001*0.1)^2; (0.05*0.3)^2; (0.05*0.3)^2; 0.4^2]); 
-R_flow = diag([(3.0*0.5)^2; (0.25*0.4)^2; 0.4^2]);
-best_alpha = 5e-4;
-
+%R_gps  = diag([(0.5*0.05)^2; (0.5*0.05)^2; (0.001*0.1)^2; (0.05*0.3)^2; (0.05*0.3)^2; 0.4^2]); 
+%R_flow = diag([(3.0*0.5)^2; (0.25*0.4)^2; 0.4^2]);
+%best_alpha = 5e-4;
+R_gps  = diag([(3.0*0.05)^2; (1*0.05)^2; (0.05*0.1)^2; (0.005*0.3)^2; (0.1*0.3)^2; 0.4^2]); 
+R_flow = diag([(0.5*0.5)^2; (0.75*0.4)^2; 0.4^2]);
+best_alpha = 0.9;
 fprintf('==========================================================\n');
 fprintf('          STARTING ROBUSTNESS TUNING (c)                  \n');
 fprintf('==========================================================\n');
