@@ -18,8 +18,8 @@ data_num = '49'; % SELECT dataset
 % Robustness parameters (TUNED: optimized for minimum 3D Position RMSE)
 % c_grid = [1e-12, 1e-11, 1e-10, 1e-09, 1e-08, 1e-07, 1e-06, 1e-05, 1e-04] for tuning
 data_ids = {'46'; '47'; '48'; '49'; '50'};
-c_rekf_vals = [1e-08; 1e-10; 1e-10; 1e-06; 1e-12];
-c_rukf_vals = [1e-09; 1e-08; 1e-05; 1e-09; 1e-12];
+c_rekf_vals = [1e-05; 1e-11; 1e-05; 1e-08; 1e-06];
+c_rukf_vals = [1e-05; 1e-05; 1e-08; 1e-05; 1e-06];
 params = table(c_rekf_vals, c_rukf_vals, 'RowNames', data_ids);
 
 c_rekf = params{data_num, 'c_rekf_vals'};
@@ -89,13 +89,11 @@ wb = [2.6e-6; 2.6e-6; 2.6e-6;]; % gyro bias random walk std dev
 ab = [1.66e-4; 1.66e-4; 1.66e-4;]; % accel bias random walk std dev
 
 % Measurement noise
-%R_gps = diag([(0.5 * 0.05) ^ 2; (0.5 * 0.05) ^ 2; (0.001 * 0.1) ^ 2;
-%          (0.05 * 0.3) ^ 2; (0.05 * 0.3) ^ 2; 0.4 ^ 2]); % Tuned 6x6
-%R_flow = diag([(3.0 * 0.5) ^ 2; (0.25 * 0.4) ^ 2; 0.4 ^ 2]); % Tuned 3x3
-%alpha = 5e-4; % UKF/RUKF spread parameter (tuned via grid search on dataset 49)
-R_gps  = diag([(3.0*0.05)^2; (1*0.05)^2; (0.05*0.1)^2; (0.005*0.3)^2; (0.1*0.3)^2; 0.4^2]); 
-R_flow = diag([(0.5*0.5)^2; (0.75*0.4)^2; 0.4^2]);
-alpha = 0.9;
+R_gps = diag([(0.5 * 0.05) ^ 2; (0.5 * 0.05) ^ 2; (0.001 * 0.1) ^ 2;
+          (0.05 * 0.3) ^ 2; (0.05 * 0.3) ^ 2; 0.4 ^ 2]); % Tuned 6x6
+R_flow = diag([(3.0 * 0.5) ^ 2; (0.25 * 0.4) ^ 2; 0.4 ^ 2]); % Tuned 3x3
+alpha = 5e-4; % UKF/RUKF spread parameter (tuned via grid search on dataset 49)
+
 % Online outlier gating : Exponential Moving Average(EMA) with forgetting factor  
 % mu_k = lam * mu_{k - 1} + (1 - lam) * | x_k | (tracks mean of | v |) 
 % sigma_k = lam * sigma_{k - 1} + (1 - lam) * (|x_k| - mu)^2 (tracks variance of |v|)
